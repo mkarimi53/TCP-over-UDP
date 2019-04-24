@@ -2,7 +2,6 @@
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 
-import Plot.Data;
 
 public class TCPServerSocketImpl extends TCPServerSocket {
 
@@ -22,6 +21,8 @@ public class TCPServerSocketImpl extends TCPServerSocket {
         byte recvBuf[] = new byte[1480]; //Not sure
         DatagramPacket DpReceive = new DatagramPacket(recvBuf, recvBuf.length, ip, port);
         edSocket.receive(DpReceive);
+
+        TCPSocket tcpSocket = new TCPSocketImpl(DpReceive.getAddress().getHostAddress(), DpReceive.getPort());
 
         byte sendBuff[] = new byte[1480];
         DatagramPacket DpSend = new DatagramPacket(sendBuff, sendBuff.length, DpReceive.getAddress(), DpReceive.getPort());
