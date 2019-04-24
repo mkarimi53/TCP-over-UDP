@@ -1,6 +1,9 @@
 import java.util.Random;
 
 public class TCPSocketImpl extends TCPSocket {
+
+    EnhancedDatagramSocket edSocket;
+
     public TCPSocketImpl(String ip, int port) throws Exception {
         super(ip, port);
     }
