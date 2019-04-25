@@ -19,7 +19,7 @@ public class TCPParser {
         System.arraycopy(ackByte, 0, dpBuff, seqByte.length, ackByte.length);
         System.arraycopy(buf, 0, dpBuff, seqByte.length + ackByte.length, buf.length);
 
-        datagramPacket = new DatagramPacket(dpBuff, length, address, destPort);
+        datagramPacket = new DatagramPacket(dpBuff, dpBuff.length, address, destPort);
     }
 
     TCPParser(DatagramPacket dp){
