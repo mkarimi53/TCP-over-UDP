@@ -14,27 +14,10 @@ public class TCPSocketImpl extends TCPSocket {
     Random rand=new Random();
     public TCPSocketImpl(String ip, int port) throws Exception {
         super(ip, port);
-        //this.seq=rand.nextInt(100)+100;
-        this.seq=500;
+        this.seq=rand.nextInt(100)+100;
         this.port = port;
-        this.ip = InetAddress.getLocalHost(); 
-        edSocket = new EnhancedDatagramSocket(0);
-        byte bufSendPacketSYN[]=new byte[0];
-        DatagramPacket sendPacketSYN = new TCPParser(bufSendPacketSYN, 0, this.ip, this.port,this.seq , 0).datagramPacket;
-        edSocket.send(sendPacketSYN);
-        byte bufRecievepacketSYNAC[]=new byte[1148];
-        DatagramPacket recievepacketSYNAC=new DatagramPacket(bufRecievepacketSYNAC,bufRecievepacketSYNAC.length);
-        edSocket.receive(recievepacketSYNAC);
-        TCPParser SYNACparse=new TCPParser(recievepacketSYNAC);
-        //TODOOO handle receive timer
-        //check acknowledge
-        int ack=SYNACparse.getSeq();
-        this.seq=SYNACparse.getAck();
-        System.out.println(ack);
-        System.out.println(this.seq);
-        byte bufSendPacketAC[]=new byte[0];
-        DatagramPacket sendPacketAC = new TCPParser(bufSendPacketAC, 0, this.ip, this.port,this.seq ,ack+1).datagramPacket;
-        edSocket.send(sendPacketAC);
+        this.ip = InetAddress.getByName(ip);
+        this.edSocket = new EnhancedDatagramSocket(0);
     }
 
     @Override
@@ -75,6 +58,30 @@ public class TCPSocketImpl extends TCPSocket {
     public void receive(String pathToFile) throws Exception {
         throw new RuntimeException("Not implemented!");
     }
+    @Override
+    public void connect() throws Exception{
+        byte bufSendPacketSYN[]=new byte[0];
+        DatagramPacket sendPacketSYN = new TCPParser(bufSendPacketSYN, 0, this.ip, this.port,this.seq , 0).datagramPacket;
+        edSocket.send(sendPacketSYN);
+        byte bufRecievepacketSYNAC[]=new byte[1148];
+        DatagramPacket recievepacketSYNAC=new DatagramPacket(bufRecievepacketSYNAC,bufRecievepacketSYNAC.length);
+        edSocket.receive(recievepacketSYNAC);
+        TCPParser SYNACparse=new TCPParser(recievepacketSYNAC);
+        while(SYNACparse.getAck()!=this.seq+1){
+            bufRecievepacketSYNAC=new byte[1148];
+            recievepacketSYNAC=new DatagramPacket(bufRecievepacketSYNAC,bufRecievepacketSYNAC.length);
+            edSocket.receive(recievepacketSYNAC);
+            SYNACparse=new TCPParser(recievepacketSYNAC);
+                
+        }
+       
+        int ack=SYNACparse.getSeq();
+        this.seq=SYNACparse.getAck();
+        byte bufSendPacketAC[]=new byte[0];
+        DatagramPacket sendPacketAC = new TCPParser(bufSendPacketAC, 0, this.ip, this.port,this.seq ,ack+1).datagramPacket;
+        edSocket.send(sendPacketAC);
+    }
+
 
     @Override
     public void close() throws Exception {
