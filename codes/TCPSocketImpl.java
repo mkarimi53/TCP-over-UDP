@@ -79,10 +79,17 @@ public class TCPSocketImpl extends TCPSocket {
     public void GBNsend(){
         System.out.println("GBNSend");
         for (int i=lastWindowEnd;i<base+windowSize;i++){
+            System.out.println(base);
+            System.out.println(lastWindowEnd);
+
             int end=(i+1)*MSS;
             if(end>fileContent.length)end=fileContent.length+1;
-            DatagramPacket sendPacketSYN = new TCPParser(Arrays.copyOfRange(fileContent,(i)*MSS,end),
-             MSS, this.ip, this.port,this.seq , 0).datagramPacket;
+            DatagramPacket sendPacketSYN = new TCPParser(Arrays.copyOfRange(fileContent,(i)*MSS,end), MSS, this.ip, this.port,this.seq , 0).datagramPacket;
+            System.out.println(new String(sendPacketSYN.getData()));
+            System.out.println(this.ip);
+            System.out.println(this.port);
+
+        
             try{
                 edSocket.send(sendPacketSYN);
             }catch(Exception ex){
@@ -140,7 +147,8 @@ public class TCPSocketImpl extends TCPSocket {
             windowSize=1;
             dupACKcount=0;
             return TCPNewRenoState.SLOWSTART ;
-        }catch(IOException ex){
+        }
+        catch(IOException ex){
             System.out.println("slow start i/o exception :"+ ex.toString());
             return TCPNewRenoState.SLOWSTART;
         }
@@ -194,8 +202,10 @@ public class TCPSocketImpl extends TCPSocket {
         while(true){
             byte[] packet=new byte[payload];
             DatagramPacket packetDatagram=new DatagramPacket(packet,payload);
+            System.out.println("receive");
             edSocket.receive(packetDatagram);
-        
+            System.out.println(new String(packetDatagram.getData()));
+            
             TCPParser packetParse= new TCPParser(packetDatagram);
             int recievedSeq=packetParse.getSeq();
         
@@ -217,12 +227,9 @@ public class TCPSocketImpl extends TCPSocket {
                 seqList.add(recievedSeq);
                 receiveBuffer.add(packet);
             }
-                
-        
         }
-        
-        
     }
+
     @Override
     public void connect() throws Exception{
         byte bufSendPacketSYN[]=new byte[0];
