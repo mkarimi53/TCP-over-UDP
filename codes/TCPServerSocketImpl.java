@@ -27,10 +27,12 @@ public class TCPServerSocketImpl extends TCPServerSocket {
         DatagramPacket DpReceive = new DatagramPacket(recvBuf, recvBuf.length);
         edSocket.receive(DpReceive);
         TCPParser ParseDpReceive=new TCPParser(DpReceive);
+
         byte sendBuff[] = new byte[0];
-        TCPParser AckDpReceive=new TCPParser
-        (sendBuff, sendBuff.length, DpReceive.getAddress(), DpReceive.getPort(), this.seq, ParseDpReceive.getSeq()+1);
-        edSocket.send(AckDpReceive.datagramPacket);
+        TCPParser AckDpReceive=new TCPParser(sendBuff, sendBuff.length, DpReceive.getAddress(), DpReceive.getPort(), this.seq, ParseDpReceive.getSeq()+1);
+        TCPSocketImpl tcpSocket = new TCPSocketImpl(DpReceive.getAddress().getHostAddress(),DpReceive.getPort());
+        tcpSocket.sendSYN_ACK(AckDpReceive.datagramPacket);
+
         byte recvAckBuf[] = new byte[1480]; //Not sure
         DatagramPacket DpAckReceive = new DatagramPacket(recvAckBuf, recvAckBuf.length);
         edSocket.receive(DpAckReceive);
@@ -41,8 +43,9 @@ public class TCPServerSocketImpl extends TCPServerSocket {
             edSocket.receive(DpAckReceive);    
             x=new TCPParser(DpAckReceive);
         }
+
         this.seq=x.getAck();
-        return new TCPSocketImpl(DpAckReceive.getAddress().getHostAddress(),DpAckReceive.getPort());
+        return tcpSocket;
     }
 
     @Override

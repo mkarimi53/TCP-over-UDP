@@ -34,6 +34,7 @@ public class TCPSocketImpl extends TCPSocket {
     int lastWindowEnd;
     Random rand=new Random();
     enum TCPNewRenoState{ SLOWSTART,CONGESTOINAVOIDANCE,FASTRECOVERY}
+
     public TCPSocketImpl(String ip, int port) throws Exception {
         super(ip, port);
         this.seq=rand.nextInt(100)+100;
@@ -49,6 +50,7 @@ public class TCPSocketImpl extends TCPSocket {
         this.lastWindowEnd=0;
         this.payload=1148;
     }
+
     public void readFile(String pathToFile){
         File file=new File(pathToFile);
         FileInputStream fileIS=null;
@@ -75,6 +77,7 @@ public class TCPSocketImpl extends TCPSocket {
         }
     }
     public void GBNsend(){
+        System.out.println("GBNSend");
         for (int i=lastWindowEnd;i<base+windowSize;i++){
             int end=(i+1)*MSS;
             if(end>fileContent.length)end=fileContent.length+1;
@@ -245,7 +248,22 @@ public class TCPSocketImpl extends TCPSocket {
         DatagramPacket sendPacketAC = new TCPParser(bufSendPacketAC, 0, this.ip
         , this.port,this.seq ,ack+1).datagramPacket;
         edSocket.send(sendPacketAC);
+
+        this.ip = recievepacketSYNAC.getAddress();
+        this.port = recievepacketSYNAC.getPort();
+        System.out.println(this.ip);    
+        System.out.println(this.port);
         this.seq=0;
+    }
+
+    public void sendSYN_ACK(DatagramPacket dp){
+        System.out.println("sendSYN_ACK");
+        try{
+            edSocket.send(dp);
+        }
+        catch(IOException e){
+            System.out.println("IOException in sendSYN_ACK");
+        }
     }
 
 
