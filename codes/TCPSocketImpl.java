@@ -77,7 +77,7 @@ public class TCPSocketImpl extends TCPSocket {
         }
     }
     public void GBNsend(){
- //       if(this.seq>fileContent.length/this.MSS-10)return;
+        // if(this.seq>fileContent.length/this.MSS-10)return;
         System.out.println("lastWindowEnd "+lastWindowEnd+" base "+base+" windowSize "+windowSize);
         for (int i=lastWindowEnd;i<base+windowSize;i++){
     
@@ -97,7 +97,7 @@ public class TCPSocketImpl extends TCPSocket {
         lastWindowEnd=base+windowSize;
     }
     public void retransmit(int ack){
-        System.out.println("retransmit"+ack);
+        System.out.println("retransmit "+ack);
         DatagramPacket retransmitPacket = new TCPParser(Arrays.copyOfRange(fileContent,ack*MSS,(ack+1)*MSS),
         MSS, this.ip, this.port,ack, 0).datagramPacket;
         try{
@@ -105,7 +105,6 @@ public class TCPSocketImpl extends TCPSocket {
         }catch(Exception ex){
             System.out.println(ex.toString());
         }
-        
     }
     
     
@@ -114,7 +113,7 @@ public class TCPSocketImpl extends TCPSocket {
         byte ACKpacket[]=new byte[200];
         DatagramPacket recieveACK=new DatagramPacket(ACKpacket,ACKpacket.length);
         try{
-        //    edSocket.setSoTimeout(timeout);
+            edSocket.setSoTimeout(timeout);
             System.out.println("waiting for ack");
             edSocket.receive(recieveACK);
             // System.out.println(new String(recieveACK.getData()));
@@ -143,7 +142,8 @@ public class TCPSocketImpl extends TCPSocket {
             windowSize++;
             dupACKcount=0;
             this.seq = ack + 1;
-            return (windowSize<SSThreshold)?TCPNewRenoState.SLOWSTART:TCPNewRenoState.CONGESTOINAVOIDANCE;
+            System.out.println("************************threshold reached***********************");
+            return (windowSize < SSThreshold) ? TCPNewRenoState.SLOWSTART : TCPNewRenoState.CONGESTOINAVOIDANCE;
         }else{
             System.out.println("Sender: dupAck");
             
@@ -211,7 +211,6 @@ public class TCPSocketImpl extends TCPSocket {
                     return TCPNewRenoState.CONGESTOINAVOIDANCE;
                 }
             }
-            
         }
         catch(SocketException ex){
             System.out.println("CongestionAvoidance: Timeout");
@@ -230,6 +229,7 @@ public class TCPSocketImpl extends TCPSocket {
     }
 
     public TCPNewRenoState fastRecovery(){
+        System.out.println("-------------------------------------------fastrecovery");
         byte ACKDataBuffer[] = new byte[200];
      //   int mostRecentAck=this.seq-1;//check it
         DatagramPacket ACKDatagramPacket = new DatagramPacket(ACKDataBuffer, ACKDataBuffer.length);
@@ -270,10 +270,10 @@ public class TCPSocketImpl extends TCPSocket {
 
         }
     }
+
     public void tcpNewReno(){
         TCPNewRenoState state=TCPNewRenoState.SLOWSTART;
         while(true){
-            state=slowStart();
             switch(state){
                 case SLOWSTART:
                     state=slowStart();
@@ -285,13 +285,12 @@ public class TCPSocketImpl extends TCPSocket {
                     state=fastRecovery();
                     break;
                 default:
-                    state=slowStart();
                     System.out.println("wtf");
-
+                    state=slowStart();
            }
         }
-
     }
+
     @Override
     public void send(String pathToFile) throws Exception {
         this.seq=0;
