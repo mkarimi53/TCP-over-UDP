@@ -148,9 +148,8 @@ public class TCPSocketImpl extends TCPSocket {
             System.out.println("Sender: dupAck");
             dupACKcount++;
             if(dupACKcount==3){
-                dupACKcount=2;
-           //    SSThreshold=windowSize/2;
-              //  windowSize=SSThreshold+3;
+                SSThreshold=windowSize/2;
+                windowSize=SSThreshold+3;
                 retransmit(ack);
                 return TCPNewRenoState.FASTRECOVERY;
             }
@@ -231,25 +230,24 @@ public class TCPSocketImpl extends TCPSocket {
     // public TCPNewRenoState fastRecovery(){
 
     // }
+    
     public void tcpNewReno(){
         TCPNewRenoState state=TCPNewRenoState.SLOWSTART;
         while(true){
-            state=slowStart();
-            // switch(state){
-            //     case SLOWSTART:
-            //         state=slowStart();
-            //         break;
-            //     // case CONGESTOINAVOIDANCE:
-                //     state=congestionAvoidance();
-                //     break;
+            switch(state){
+                case SLOWSTART:
+                    state=slowStart();
+                    break;
+                case CONGESTOINAVOIDANCE:
+                    state=congestionAvoidance();
+                    break;
                 // case FASTRECOVERY:
                 //     state=fastRecovery();
                 //     break;
-                // default:
-                //     state=slowStart();
-                //     System.out.println("wtf");
-
-         //   }
+                default:
+                    System.out.println("wtf");
+                    // state=slowStart();
+           }
         }
 
     }
@@ -268,21 +266,23 @@ public class TCPSocketImpl extends TCPSocket {
         ArrayList<Integer> seqList=new ArrayList<Integer>();
 
         while(true){
-            byte[] packet=new byte[payload];
-            DatagramPacket packetDatagram=new DatagramPacket(packet,payload);
-            System.out.println("waiting for recieve: "+expectedSeq);
+
+            byte[] packet = new byte[payload];
+            DatagramPacket packetDatagram = new DatagramPacket(packet,payload);
+            System.out.println("waiting for recieve: " + expectedSeq);
             edSocket.receive(packetDatagram);
             
-            TCPParser packetParse= new TCPParser(packetDatagram);
-            int recievedSeq=packetParse.getSeq();
+            TCPParser packetParse = new TCPParser(packetDatagram);
+            int recievedSeq = packetParse.getSeq();
           
-            if(recievedSeq==expectedSeq){              
-                System.out.println("IF"+"recieved"+recievedSeq+" this is expected"+expectedSeq);  
+            if(recievedSeq == expectedSeq){    
+
+                System.out.println("IF recieved" + recievedSeq + " this is expected " + expectedSeq);  
                 seqList.add(expectedSeq);
                 Collections.sort(seqList);
-                System.out.println("sortlastitem"+seqList.get(seqList.size()-1));
-                int temp=expectedSeq;
-                for(int i=temp;i<seqList.size();i++){
+                System.out.println("sortlastitem " + seqList.get(seqList.size()-1));
+                int temp = expectedSeq;
+                for(int i = temp; i < seqList.size();i++){
                     if(seqList.get(i)==expectedSeq+1){System.out.println("forloop"+seqList.get(i));expectedSeq=seqList.get(i);}
                     else break;
                 }
