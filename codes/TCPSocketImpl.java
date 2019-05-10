@@ -77,16 +77,16 @@ public class TCPSocketImpl extends TCPSocket {
         }
     }
     public void GBNsend(){
-        System.out.println("GBNSend");
+ //       if(this.seq>fileContent.length/this.MSS-10)return;
+        System.out.println("lastWindowEnd "+lastWindowEnd+" base "+base+" windowSize "+windowSize);
         for (int i=lastWindowEnd;i<base+windowSize;i++){
-            System.out.println("base = " + base);
-            System.out.println("lastWindowEnd = " + lastWindowEnd);
-
+    
             int end=(i+1)*MSS;
-            if(end>fileContent.length)end=fileContent.length+1;
-            DatagramPacket sendPacketSYN = new TCPParser(Arrays.copyOfRange(fileContent,(i)*MSS,end), MSS, this.ip, this.port, i, 0).datagramPacket;
-            System.out.println(new String(sendPacketSYN.getData()));
-        
+            //if(end>fileContent.length)end=fileContent.length-1;
+            if(end>fileContent.length)break;
+            System.out.println("sentpacket"+i);
+            DatagramPacket sendPacketSYN = new TCPParser(Arrays.copyOfRange(fileContent,(i)*MSS,end), MSS, this.ip, this.port,i , 0).datagramPacket;
+         
             try{
                 edSocket.send(sendPacketSYN);
             }catch(Exception ex){
@@ -97,9 +97,9 @@ public class TCPSocketImpl extends TCPSocket {
         lastWindowEnd=base+windowSize;
     }
     public void retransmit(int ack){
-        System.out.println("retransmit");
+        System.out.println("retransmit"+ack);
         DatagramPacket retransmitPacket = new TCPParser(Arrays.copyOfRange(fileContent,ack*MSS,(ack+1)*MSS),
-        MSS, this.ip, this.port,ack , 0).datagramPacket;
+        MSS, this.ip, this.port,ack, 0).datagramPacket;
         try{
             edSocket.send(retransmitPacket);
         }catch(Exception ex){
@@ -107,34 +107,15 @@ public class TCPSocketImpl extends TCPSocket {
         }
         
     }
-    public void tcpNewReno(){
-        TCPNewRenoState state=TCPNewRenoState.SLOWSTART;
-        while(true){
-            switch(state){
-                case SLOWSTART:
-                    state=slowStart();
-                    break;
-                // case CONGESTOINAVOIDANCE:
-                //     state=congestionAvoidance();
-                //     break;
-                // case FASTRECOVERY:
-                //     state=fastRecovery();
-                //     break;
-                default:
-                    state=slowStart();
-                    System.out.println("wtf");
-
-            }
-        }
-
-    }
+    
     
     public TCPNewRenoState slowStart(){
         GBNsend();
         byte ACKpacket[]=new byte[200];
         DatagramPacket recieveACK=new DatagramPacket(ACKpacket,ACKpacket.length);
         try{
-            edSocket.setSoTimeout(timeout);
+        //    edSocket.setSoTimeout(timeout);
+            System.out.println("waiting for ack");
             edSocket.receive(recieveACK);
             // System.out.println(new String(recieveACK.getData()));
         }
@@ -145,6 +126,8 @@ public class TCPSocketImpl extends TCPSocket {
             dupACKcount=0;
             retransmit(this.seq);
 
+            System.out.println("slow start socket exception :"+ ex.toString());
+            
             return TCPNewRenoState.SLOWSTART ;
         }
         catch(IOException ex){
@@ -165,8 +148,9 @@ public class TCPSocketImpl extends TCPSocket {
             System.out.println("Sender: dupAck");
             dupACKcount++;
             if(dupACKcount==3){
-                SSThreshold=windowSize/2;
-                windowSize=SSThreshold+3;
+                dupACKcount=2;
+           //    SSThreshold=windowSize/2;
+              //  windowSize=SSThreshold+3;
                 retransmit(ack);
                 return TCPNewRenoState.FASTRECOVERY;
             }
@@ -247,11 +231,34 @@ public class TCPSocketImpl extends TCPSocket {
     // public TCPNewRenoState fastRecovery(){
 
     // }
+    public void tcpNewReno(){
+        TCPNewRenoState state=TCPNewRenoState.SLOWSTART;
+        while(true){
+            state=slowStart();
+            // switch(state){
+            //     case SLOWSTART:
+            //         state=slowStart();
+            //         break;
+            //     // case CONGESTOINAVOIDANCE:
+                //     state=congestionAvoidance();
+                //     break;
+                // case FASTRECOVERY:
+                //     state=fastRecovery();
+                //     break;
+                // default:
+                //     state=slowStart();
+                //     System.out.println("wtf");
 
+         //   }
+        }
+
+    }
     @Override
     public void send(String pathToFile) throws Exception {
         this.seq=0;
+
         readFile(pathToFile);
+        System.out.println("file size"+fileContent.length/MSS);
         tcpNewReno();
     }
     
@@ -263,32 +270,32 @@ public class TCPSocketImpl extends TCPSocket {
         while(true){
             byte[] packet=new byte[payload];
             DatagramPacket packetDatagram=new DatagramPacket(packet,payload);
-            System.out.println("receive");
+            System.out.println("waiting for recieve: "+expectedSeq);
             edSocket.receive(packetDatagram);
-            System.out.println(new String(packetDatagram.getData()));
-            System.out.println(packetDatagram.getAddress());
-            System.out.println(packetDatagram.getPort());
+            
             TCPParser packetParse= new TCPParser(packetDatagram);
             int recievedSeq=packetParse.getSeq();
-            System.out.println("receivedSeq = " + recievedSeq);
-            if(recievedSeq==expectedSeq){ 
-                System.out.println("receive: recievedSeq==expectedSeq");          
+          
+            if(recievedSeq==expectedSeq){              
+                System.out.println("IF"+"recieved"+recievedSeq+" this is expected"+expectedSeq);  
                 seqList.add(expectedSeq);
                 Collections.sort(seqList);
-                for(int i=expectedSeq+1;i<seqList.size();i++){
-                    if(seqList.get(i)==expectedSeq+1)expectedSeq=seqList.get(i);
+                System.out.println("sortlastitem"+seqList.get(seqList.size()-1));
+                int temp=expectedSeq;
+                for(int i=temp;i<seqList.size();i++){
+                    if(seqList.get(i)==expectedSeq+1){System.out.println("forloop"+seqList.get(i));expectedSeq=seqList.get(i);}
                     else break;
                 }
+                DatagramPacket sendACKPacket = new TCPParser(new byte[0], 0, this.ip, this.port,expectedSeq+1, expectedSeq).datagramPacket;
+                
                 expectedSeq++;
-                DatagramPacket sendACKPacket = new TCPParser(new byte[0], 0, this.ip, this.port, expectedSeq, expectedSeq - 1).datagramPacket;
-                System.out.println("receive: " + new String(sendACKPacket.getData()));
                 edSocket.send(sendACKPacket);
                 receiveBuffer.add(packet);
-                
-            }else{
-                System.out.println("receive: recievedSeq!=expectedSeq");
-                System.out.println("receive: " + expectedSeq + " " + recievedSeq);
-                DatagramPacket sendACKPacket = new TCPParser(new byte[0], 0, this.ip, this.port,expectedSeq, expectedSeq - 1).datagramPacket;
+                    
+            }else{                
+                System.out.println("else"+"recieved"+recievedSeq+" this is expected"+expectedSeq);
+                DatagramPacket sendACKPacket = new TCPParser(new byte[0], 0, this.ip, this.port,expectedSeq+1, expectedSeq).datagramPacket;
+                System.out.println("send dup ack");
                 edSocket.send(sendACKPacket);
                 seqList.add(recievedSeq);
                 receiveBuffer.add(packet);
@@ -324,13 +331,10 @@ public class TCPSocketImpl extends TCPSocket {
 
         this.ip = recievepacketSYNAC.getAddress();
         this.port = recievepacketSYNAC.getPort();
-        System.out.println(this.ip);    
-        System.out.println(this.port);
         this.seq=0;
     }
 
     public void sendSYN_ACK(DatagramPacket dp){
-        System.out.println("sendSYN_ACK");
         try{
             edSocket.send(dp);
         }
