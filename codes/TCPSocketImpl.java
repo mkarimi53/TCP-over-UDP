@@ -149,8 +149,8 @@ public class TCPSocketImpl extends TCPSocket {
             dupACKcount++;
             if(dupACKcount==3){
                 dupACKcount=2;
-           //    SSThreshold=windowSize/2;
-              //  windowSize=SSThreshold+3;
+                SSThreshold=windowSize/2;
+                windowSize=SSThreshold+3;
                 retransmit(ack);
                 return TCPNewRenoState.FASTRECOVERY;
             }
@@ -228,28 +228,66 @@ public class TCPSocketImpl extends TCPSocket {
         }
     }
 
-    // public TCPNewRenoState fastRecovery(){
+    public TCPNewRenoState fastRecovery(){
+        byte ACKDataBuffer[] = new byte[200];
+     //   int mostRecentAck=this.seq-1;//check it
+        DatagramPacket ACKDatagramPacket = new DatagramPacket(ACKDataBuffer, ACKDataBuffer.length);
+        try{
+            edSocket.setSoTimeout(timeout);
+            System.out.println("waiting for recieve fast recovery");
+            edSocket.receive(ACKDatagramPacket);
+            TCPParser parsedACKDatagramPacket = new TCPParser(ACKDatagramPacket);
+            int ack = parsedACKDatagramPacket.getAck();
 
-    // }
+            System.out.println("fast recovery: Ack received. ackNum = " + ack + ", seqNum = " + this.seq);
+
+            if(ack >= this.seq){
+                System.out.println("return from fast recovery ack:"+this.seq);
+                base++;
+                dupACKcount=0;
+                this.windowSize++;
+                this.seq = ack + 1;
+                GBNsend();
+                return TCPNewRenoState.CONGESTOINAVOIDANCE;
+            } 
+            else{
+                this.windowSize++;
+                return TCPNewRenoState.FASTRECOVERY;
+            }
+        }catch(SocketException ex){
+            System.out.println("FastRecovery: Timeout");
+
+            SSThreshold=windowSize/2;
+            windowSize=1;
+            dupACKcount=0;
+            retransmit(this.seq);
+
+            return TCPNewRenoState.SLOWSTART ;
+        }catch(IOException io){
+            System.out.println("FastRecovery: i/o exception occured. "+ io.toString());
+            return TCPNewRenoState.SLOWSTART ;
+
+        }
+    }
     public void tcpNewReno(){
         TCPNewRenoState state=TCPNewRenoState.SLOWSTART;
         while(true){
             state=slowStart();
-            // switch(state){
-            //     case SLOWSTART:
-            //         state=slowStart();
-            //         break;
-            //     // case CONGESTOINAVOIDANCE:
-                //     state=congestionAvoidance();
-                //     break;
-                // case FASTRECOVERY:
-                //     state=fastRecovery();
-                //     break;
-                // default:
-                //     state=slowStart();
-                //     System.out.println("wtf");
+            switch(state){
+                case SLOWSTART:
+                    state=slowStart();
+                    break;
+                // case CONGESTOINAVOIDANCE:
+                    state=congestionAvoidance();
+                    break;
+                case FASTRECOVERY:
+                    state=fastRecovery();
+                    break;
+                default:
+                    state=slowStart();
+                    System.out.println("wtf");
 
-         //   }
+           }
         }
 
     }
