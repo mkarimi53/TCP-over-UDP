@@ -78,8 +78,8 @@ public class TCPSocketImpl extends TCPSocket {
     }
     public void GBNsend(){
         // if(this.seq>fileContent.length/this.MSS-10)return;
-        System.out.println("lastWindowEnd "+this.seq+" base "+base+" windowSize "+windowSize);
-        for (int i=lastWindowEnd;i<base+windowSize;i++){
+        System.out.println("lastWindowEnd "+lastWindowEnd+"this.seq"+this.seq+"base" +base+" windowSize "+windowSize);
+        for (int i=this.seq;i< (base+windowSize );i++){
     
             int end=(i+1)*MSS;
             //if(end>fileContent.length)end=fileContent.length-1;
@@ -231,8 +231,8 @@ public class TCPSocketImpl extends TCPSocket {
             System.out.println("CongestionAvoidance: i/o exception occured. "+ ex.toString());
             SSThreshold=windowSize/2;
             windowSize=1;
+
             dupACKcount=0;
-            TCPParser ACKDatagramPacketparser=new TCPParser(ACKDatagramPacket);
 
             retransmit(this.seq-1);
 
