@@ -133,7 +133,7 @@ public class TCPSocketImpl extends TCPSocket {
             SSThreshold=windowSize/2;
             windowSize=1;
             dupACKcount=0;
-            retransmit(this.seq-1);
+            retransmit(this.seq);
 
             System.out.println("slow start socket exception :"+ ex.toString());
      
@@ -210,7 +210,7 @@ public class TCPSocketImpl extends TCPSocket {
                 if(dupACKcount == 3){
                     SSThreshold = windowSize/2;
                     windowSize=SSThreshold+3;
-                    retransmit(this.seq-1);
+                    retransmit(this.seq);
                     return TCPNewRenoState.FASTRECOVERY;
                 }
                 else {
@@ -223,7 +223,7 @@ public class TCPSocketImpl extends TCPSocket {
             SSThreshold=windowSize/2;
             windowSize=1;
             dupACKcount=0;
-            retransmit(this.seq-1);
+            retransmit(this.seq);
 
             return TCPNewRenoState.SLOWSTART ;
         }
@@ -234,7 +234,7 @@ public class TCPSocketImpl extends TCPSocket {
 
             dupACKcount=0;
 
-            retransmit(this.seq-1);
+            retransmit(this.seq);
 
             System.out.println("slow start socket exception :"+ ex.toString());
      
@@ -275,7 +275,7 @@ public class TCPSocketImpl extends TCPSocket {
             SSThreshold=windowSize/2;
             windowSize=1;
             dupACKcount=0;
-            retransmit(this.seq-1);
+            retransmit(this.seq);
 
             return TCPNewRenoState.SLOWSTART ;
         }catch(IOException ex){
@@ -283,7 +283,7 @@ public class TCPSocketImpl extends TCPSocket {
             SSThreshold=windowSize/2;
             windowSize=1;
             dupACKcount=0;
-            retransmit(this.seq-1);
+            retransmit(this.seq);
 
             System.out.println("slow start socket exception :"+ ex.toString());
      
