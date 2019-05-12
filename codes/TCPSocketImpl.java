@@ -306,7 +306,7 @@ public class TCPSocketImpl extends TCPSocket {
                     state=fastRecovery();
                     break;
                 default:
-                    System.out.println("wtf");
+                    System.out.println("WTF welcome to  Quantom world !");
                     state=slowStart();
            }
         }
