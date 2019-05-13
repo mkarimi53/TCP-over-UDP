@@ -39,6 +39,7 @@ public class TCPParser {
 
         this.seq = convertFromByte(seqByte);
         this.ack = convertFromByte(ackByte);
+        this.data= dataByte;
     }
 
     public byte[] convertToByte(int x){
